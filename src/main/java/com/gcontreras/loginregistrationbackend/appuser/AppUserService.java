@@ -1,11 +1,15 @@
 package com.gcontreras.loginregistrationbackend.appuser;
 
+import com.gcontreras.loginregistrationbackend.registration.token.ConfirmationToken;
+import com.gcontreras.loginregistrationbackend.registration.token.ConfirmationTokenService;
 import lombok.AllArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Service
 @AllArgsConstructor
@@ -14,6 +18,7 @@ public class AppUserService implements UserDetailsService {
             "user with email %s not found";
     private final AppUserRepository appUserRepository;
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
+    private final ConfirmationTokenService confirmationTokenService;
 
     @Override
     public UserDetails loadUserByUsername(String email)
@@ -39,8 +44,21 @@ public class AppUserService implements UserDetailsService {
 
         appUserRepository.save(appUser);
 
-        //TODO Send confirmation token
+        String token = UUID.randomUUID().toString();
+        // Send confirmation token
+        ConfirmationToken confirmationToken = new ConfirmationToken(
+                token,
+                LocalDateTime.now(),
+                LocalDateTime.now().plusMinutes(15),
+                appUser
+        );
+        confirmationTokenService.saveConfirmationToken(confirmationToken);
 
-        return "it works";
+        //TODO SEND EMAIL
+
+        return token;
+    }
+    public int enableAppUser(String email) {
+        return appUserRepository.enableAppUser(email);
     }
 }
